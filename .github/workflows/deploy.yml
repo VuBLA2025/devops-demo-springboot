@@ -1,0 +1,60 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches: [ "main" ] # Kích hoạt khi push vào nhánh main (hoặc master)
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    # 1. Lấy code về máy của GitHub Runner
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    # 2. Cài đặt Java 17 để build
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        cache: maven
+
+    # 3. Build ra file .jar (Bỏ qua test cho nhanh, thực tế nên để test)
+    - name: Build with Maven
+      run: mvn clean package -DskipTests
+
+    # 4. Copy file .jar từ GitHub sang VPS (Dùng scp)
+    - name: Copy JAR to VPS
+      uses: appleboy/scp-action@v0.1.7
+      with:
+        host: ${{ secrets.VPS_HOST }}
+        username: ${{ secrets.VPS_USER }}
+        key: ${{ secrets.VPS_SSH_KEY }}
+        source: "target/*.jar"
+        target: "/home/ubuntu/devops-lab/app_temp" # Copy vào thư mục tạm
+
+    # 5. SSH vào VPS để thay thế file cũ và Restart Docker
+    - name: Restart Docker on VPS
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.VPS_HOST }}
+        username: ${{ secrets.VPS_USER }}
+        key: ${{ secrets.VPS_SSH_KEY }}
+        script: |
+          # Di chuyển file jar từ thư mục tạm vào đúng chỗ
+          # Lưu ý: Lệnh này giả định file jar build ra có tên cố định hoặc bạn dùng *
+          mv /home/ubuntu/devops-lab/app_temp/target/*.jar /home/ubuntu/devops-lab/app/app.jar
+          
+          # Dọn dẹp thư mục tạm
+          rm -rf /home/ubuntu/devops-lab/app_temp
+          
+          # Đi tới thư mục chứa docker-compose
+          cd /home/ubuntu/devops-lab/app
+          
+          # Restart lại container (Build lại để nhận file jar mới)
+          docker-compose up -d --build backend-app
+          
+          # Dọn dẹp image cũ cho đỡ rác ổ cứng
+          docker image prune -f
