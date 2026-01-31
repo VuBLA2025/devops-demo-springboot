@@ -2,7 +2,9 @@ name: Deploy to VPS
 
 on:
   push:
-    branches: [ "main" ] # Kích hoạt khi push vào nhánh main (hoặc master)
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
 
 jobs:
   build-and-deploy:
@@ -27,6 +29,7 @@ jobs:
 
     # 4. Copy file .jar từ GitHub sang VPS (Dùng scp)
     - name: Copy JAR to VPS
+      if: github.event_name == 'push'
       uses: appleboy/scp-action@v0.1.7
       with:
         host: ${{ secrets.VPS_HOST }}
@@ -37,6 +40,7 @@ jobs:
 
     # 5. SSH vào VPS để thay thế file cũ và Restart Docker
     - name: Restart Docker on VPS
+      if: github.event_name == 'push'
       uses: appleboy/ssh-action@v1.0.3
       with:
         host: ${{ secrets.VPS_HOST }}
