@@ -25,7 +25,7 @@ jobs:
 
     # 3. Build ra file .jar (Bỏ qua test cho nhanh, thực tế nên để test)
     - name: Build with Maven
-      run: mvn clean package -DskipTests
+      run: mvn clean package -DskipTests=${{ github.event_name != 'pull_request' }}
 
     # 4. Copy file .jar từ GitHub sang VPS (Dùng scp)
     - name: Copy JAR to VPS
