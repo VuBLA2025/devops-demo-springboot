@@ -54,7 +54,7 @@ jobs:
           cd /home/ubuntu/devops-lab/app
           
           # Restart lại container (Build lại để nhận file jar mới)
-          docker-compose up -d --build backend-app
+          docker compose up -d --build backend-app
           
           # Dọn dẹp image cũ cho đỡ rác ổ cứng
           docker image prune -f
