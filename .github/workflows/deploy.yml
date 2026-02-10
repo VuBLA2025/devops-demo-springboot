@@ -35,7 +35,7 @@ jobs:
         host: ${{ secrets.VPS_HOST }}
         username: ${{ secrets.VPS_USER }}
         key: ${{ secrets.VPS_SSH_KEY }}
-        source: "target/*.jar"
+        source: "target/*.jar,docker-compose.yml,Dockerfile"
         target: "/home/ubuntu/devops-lab/app_temp" # Copy vào thư mục tạm
 
     # 5. SSH vào VPS để thay thế file cũ và Restart Docker
@@ -47,15 +47,19 @@ jobs:
         username: ${{ secrets.VPS_USER }}
         key: ${{ secrets.VPS_SSH_KEY }}
         script: |
-          set -e  # <--- THÊM DÒNG NÀY (Quan trọng nhất)
+          set -e
+          # Tạo thư mục nếu chưa có
+          mkdir -p /home/ubuntu/devops-lab/app
           
-          # Nếu dòng dưới lỗi, script sẽ dừng ngay lập tức tại đây
+          # Di chuyển các file cấu hình về thư mục chạy
+          mv /home/ubuntu/devops-lab/app_temp/docker-compose.yml /home/ubuntu/devops-lab/app/
+          mv /home/ubuntu/devops-lab/app_temp/Dockerfile /home/ubuntu/devops-lab/app/
+          
+          # Di chuyển file jar
           mv /home/ubuntu/devops-lab/app_temp/target/*.jar /home/ubuntu/devops-lab/app/app.jar
           
           rm -rf /home/ubuntu/devops-lab/app_temp
           cd /home/ubuntu/devops-lab/app
           
-          # Dùng lệnh mới (đã sửa lỗi docker-compose cũ)
           docker compose up -d --build backend-app
-          
           docker image prune -f

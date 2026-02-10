@@ -1,0 +1,31 @@
+services:
+  backend-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: springboot-backend
+    ports:
+      - "8080:8080" # Mở port 8080 để truy cập từ ngoài
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres_db:5432/devops_db
+      - SPRING_DATASOURCE_USERNAME=myuser
+      - SPRING_DATASOURCE_PASSWORD=mypassword
+    depends_on:
+      - postgres_db
+    restart: always
+
+  postgres_db:
+    image: postgres:15-alpine
+    container_name: postgres_db
+    environment:
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: mypassword
+      POSTGRES_DB: devops_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: always
+
+volumes:
+  postgres_data:
