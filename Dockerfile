@@ -1,13 +1,15 @@
-# Stage 1: Build the application
-FROM maven:3.9.6-eclipse-temurin-17-alpine AS builder
-WORKDIR /app
-COPY pom.xml .
-COPY src ./src
-RUN mvn clean package -DskipTests
-
-# Stage 2: Run the application
+# Sử dụng JRE 17 nhẹ để chạy app (không cần Maven)
 FROM eclipse-temurin:17-jre-alpine
+
+# Thư mục làm việc
 WORKDIR /app
-COPY --from=builder /app/target/*.jar app.jar
+
+# Copy file jar đã được GitHub Action build sẵn và đẩy lên
+# (Lệnh mv trong script của bạn đã đổi tên nó thành app.jar)
+COPY app.jar app.jar
+
+# Mở port
 EXPOSE 8080
+
+# Chạy ứng dụng
 ENTRYPOINT ["java", "-jar", "app.jar"]
